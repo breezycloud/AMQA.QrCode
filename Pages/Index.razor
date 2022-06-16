@@ -1,0 +1,53 @@
+﻿@page "/"
+@using System.ComponentModel.DataAnnotations
+@inject Util.IConverter _code
+@inject IJSRuntime _js
+<PageTitle>Index</PageTitle>
+
+<h1 class="text-center">QR Code Generator</h1>
+
+<EditForm Model="emp">
+    <DataAnnotationsValidator/>
+    <div class="row text-center p-5">
+        <div class="col-md-12 p-2">
+            <img src="@string.Format("data:image/png;base64,{0}", emp.ImageSrc)" width="150" height="150">        
+        </div>
+        <div class="col-md-12 p-1">
+            <InputText type="text" placeholder="Enter staff id" class="form-control text-center" @bind-Value="emp.StaffId" DisplayName="Staff ID"></InputText>
+        </div>
+        <div class="col-md-12 p-1"> 
+            <div class="d-flex align-center justify-content-center">
+                <button type="submit" class="btn btn-primary" @onclick="Generate">Generate Code</button>                
+            </div>              
+        </div>
+        @if (!string.IsNullOrEmpty(emp.ImageSrc))
+        {
+            <div class="col-md-12 p-1"> 
+                <div class="d-flex align-center justify-content-center">
+                    <button type="button" class="btn btn-success" @onclick="Download">Download</button>                                
+                </div>              
+            </div>        
+        }        
+    </div>    
+    <ValidationSummary/>
+
+</EditForm>
+
+
+@code {
+    private Emp emp = new();
+    async Task Generate()
+    {
+        var code = await _code.ConvertImageToByte(emp.StaffId!);
+        emp.ImageSrc = Convert.ToBase64String(code);
+        StateHasChanged();
+    }
+    async Task Download() => await _js.InvokeVoidAsync("DownloadFile", $"{emp.StaffId}.png", emp.ImageSrc);
+
+    class Emp
+    {
+        [Required(ErrorMessage = "ID is required")]
+        public string? StaffId { get; set; }        
+        public string? ImageSrc { get; set; }
+    }    
+}
